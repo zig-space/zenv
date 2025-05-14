@@ -1,0 +1,12 @@
+.{
+    .name = .zenv,
+    .version = "0.0.0",
+    .fingerprint = 0x29c2040f39027e85,
+    .dependency = .{},
+    .paths = .{
+        "src",
+        "build.zig",
+        "build.zig.zon",
+        "README.md",
+    },
+}
