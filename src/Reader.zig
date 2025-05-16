@@ -42,6 +42,7 @@ const From = enum {
     // FILE,
 };
 
+/// The caller should call `deinit()` after finish.
 pub fn init(allocator: std.mem.Allocator, from: From, opts: ReaderOptions) !Self {
     const arena = try allocator.create(std.heap.ArenaAllocator);
     errdefer allocator.destroy(arena);
@@ -58,8 +59,6 @@ pub fn deinit(self: Self) void {
     self.allocator.destroy(self.arena);
 }
 
-/// The caller will own the memory of struct,
-/// need to use `destroy()` after finish.
 pub fn readStruct(self: Self, comptime T: type) !*const T {
     if (@typeInfo(T) != .@"struct") {
         @compileError(std.fmt.comptimePrint("Expected a `struct` found {s}\n", @typeName(@typeInfo(T))));
@@ -67,8 +66,6 @@ pub fn readStruct(self: Self, comptime T: type) !*const T {
     const allocator = self.arena.allocator();
 
     const @"struct" = try allocator.create(T);
-    errdefer allocator.destroy(@"struct");
-
     inline for (@typeInfo(T).@"struct".fields) |field| {
         var buffer: [field.name.len]u8 = undefined;
         _ = std.ascii.upperString(buffer[0..], field.name);
@@ -97,7 +94,6 @@ pub fn readKey(self: Self, comptime T: type, key: []const u8) !?T {
 //     }
 // }
 
-// The caller will own the memory
 pub fn readKeyFromTerm(self: Self, comptime T: type, key: []const u8) !?T {
     std.debug.assert(self.from == .TERM);
     const env = std.process.getEnvVarOwned(self.arena.allocator(), key[0..]) catch |err| switch (err) {
