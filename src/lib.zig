@@ -1,5 +1,6 @@
-const std = @import("std");
+pub const Reader = @import("Reader.zig");
 
-pub fn hello() void {
-    std.log.debug("Helo World", .{});
+test {
+    const std = @import("std");
+    std.testing.refAllDecls(@This());
 }
