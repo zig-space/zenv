@@ -34,6 +34,12 @@ pub fn build(b: *std.Build) void {
 
     // Display output when run by cmd
     const main_tests_cmd = b.addSystemCommand(&.{ "sh", "-c", "zig test src/lib.zig 2>&1 | cat" });
+    // SET ENV FOR TEST IT WILL BE REMOVED AFTER TESTS
+    main_tests_cmd.setEnvironmentVariable("TEST_SLICE", "test");
+    main_tests_cmd.setEnvironmentVariable("TEST_NUMBER", "0");
+    main_tests_cmd.setEnvironmentVariable("VALUE1", "value1");
+    main_tests_cmd.setEnvironmentVariable("VALUE2", "2");
+    main_tests_cmd.setEnvironmentVariable("VALUE3", "3");
     const run_test_step = b.step("test", "Run the test and display output in console");
     run_test_step.dependOn(&main_tests_cmd.step);
 }
