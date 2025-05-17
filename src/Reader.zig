@@ -63,7 +63,6 @@ pub fn deinit(self: Self) void {
     self.allocator.destroy(self.arena);
 }
 
-// TODO: add prefix
 pub fn readStruct(self: Self, comptime T: type, comptime opts: ReaderOptions) !*const T {
     if (@typeInfo(T) != .@"struct") {
         @compileError(std.fmt.comptimePrint("Expected a `struct` found {s}\n", @typeName(@typeInfo(T))));
