@@ -15,18 +15,22 @@ arena: *std.heap.ArenaAllocator,
 ///
 /// **Default** is `From.FILE`.
 from: From = .TERM,
+/// The path file contains env (.e.g .env).
+/// Is null if `Zenv.from` is `EnvFrom.TERM`.
+///
+///
+/// Must be specified if `Zenv.from` is `EnvFrom.FILE`
+/// .e.g ("path-to-your-project/.env")
+///
+/// **Default** is `null`.
+env_file_path: ?[]const u8 = null,
 opts: ReaderOptions,
 
 pub const ReaderOptions = struct {
-    /// The path file contains env (.e.g .env).
-    /// Is null if `Zenv.from` is `EnvFrom.TERM`.
+    /// The reader prefix the key for reading
     ///
-    ///
-    /// Must be specified if `Zenv.from` is `EnvFrom.FILE`
-    /// .e.g ("path-to-your-project/.env")
-    ///
-    /// **Default** is `null`.
-    env_file_path: ?[]const u8 = null,
+    /// **Default** is `null`
+    prefix: ?[]const u8 = null,
     /// Remove whitespace at the beginning and end of the value.
     /// Set `false` if disable.
     ///
@@ -34,7 +38,7 @@ pub const ReaderOptions = struct {
     trim: bool = true,
 };
 
-const ReaderError = error{ EmptyFilePath, NotSupportedType };
+const ReaderError = error{ EmptyFilePath, NotSupportedType, MissingField };
 
 const From = enum {
     TERM,
@@ -59,7 +63,7 @@ pub fn deinit(self: Self) void {
     self.allocator.destroy(self.arena);
 }
 
-pub fn readStruct(self: Self, comptime T: type) !*const T {
+pub fn readStruct(self: Self, comptime T: type, comptime opts: ReaderOptions) !*const T {
     if (@typeInfo(T) != .@"struct") {
         @compileError(std.fmt.comptimePrint("Expected a `struct` found {s}\n", @typeName(@typeInfo(T))));
     }
@@ -69,9 +73,9 @@ pub fn readStruct(self: Self, comptime T: type) !*const T {
     inline for (@typeInfo(T).@"struct".fields) |field| {
         var buffer: [field.name.len]u8 = undefined;
         _ = std.ascii.upperString(buffer[0..], field.name);
-        const value = try self.readKey(field.type, buffer[0..]) orelse {
-            std.log.warn("Not found environment: {s}", .{buffer});
-            return std.process.GetEnvVarOwnedError.EnvironmentVariableNotFound;
+        const value = try self.readKey(field.type, opts, buffer[0..]) orelse {
+            std.log.scoped(.zenv).err("Not found environment {s} in struct {s}\n", .{ buffer, @typeName(T) });
+            return ReaderError.MissingField;
         };
 
         @field(@"struct", field.name) = value;
@@ -79,9 +83,10 @@ pub fn readStruct(self: Self, comptime T: type) !*const T {
     return @"struct";
 }
 /// Return a value with `T` type.
-pub fn readKey(self: Self, comptime T: type, key: []const u8) !?T {
+pub fn readKey(self: Self, comptime T: type, opts: ReaderOptions, key: []const u8) !?T {
+    const prefix_key = try std.fmt.allocPrint(self.arena.allocator(), "{s}{s}", .{ opts.prefix orelse "", key });
     return switch (self.from) {
-        .TERM => try self.readKeyFromTerm(T, key[0..]),
+        .TERM => try self.readKeyFromTerm(T, prefix_key[0..]),
     };
 }
 
@@ -119,12 +124,12 @@ pub fn parse(self: Self, comptime T: type, value: []const u8) !T {
                 @memcpy(new_buffer[0..], trimmed[0..]);
                 return new_buffer[0..];
             } else {
-                std.log.warn("Not supported type: {s}", .{@typeName(T)});
+                std.log.scoped(.zenv).err("Not supported type: {s}\n", .{@typeName(T)});
                 return ReaderError.NotSupportedType;
             }
         },
         else => {
-            std.log.warn("Not supported type: {s}", .{@typeName(T)});
+            std.log.scoped(.zenv).err("Not supported type: {s}\n", .{@typeName(T)});
             return ReaderError.NotSupportedType;
         },
     };
@@ -137,13 +142,17 @@ test "read from terminal" {
     const env_reader: Self = try .init(allocator, .TERM, .{});
     defer env_reader.deinit();
 
-    const slice = try env_reader.readKey([]const u8, "TEST_SLICE"); // string
+    const slice = try env_reader.readKey([]const u8, .{}, "TEST_SLICE"); // string
     try expect(std.mem.eql(u8, slice.?[0..], "test"));
     try expect(@TypeOf(slice.?) == []const u8);
 
-    const int = try env_reader.readKey(u8, "TEST_NUMBER");
+    const int = try env_reader.readKey(u8, .{}, "TEST_NUMBER");
     try expect(int.? == 0);
     try expect(@TypeOf(int.?) == u8);
+
+    const with_prefix = try env_reader.readKey([]const u8, .{ .prefix = "PREFIX_" }, "SLICE"); // string
+    try expect(std.mem.eql(u8, with_prefix.?[0..], "prefix"));
+    try expect(@TypeOf(slice.?) == []const u8);
 }
 
 test "read struct from terminal" {
@@ -157,8 +166,29 @@ test "read struct from terminal" {
         value3: u16,
     };
 
-    const struct_value = try env_reader.readStruct(Test);
+    const struct_value = try env_reader.readStruct(Test, .{});
     try expect(std.mem.eql(u8, struct_value.value1, "value1"));
     try expect(struct_value.value2 == 2);
     try expect(struct_value.value3 == 3);
+
+    const Database = struct {
+        port: u16,
+        username: []const u8,
+        password: []const u8,
+    };
+
+    const database_value = try env_reader.readStruct(Database, .{ .prefix = "DB_" });
+    try expect(database_value.port == 5432);
+    try expect(std.mem.eql(u8, database_value.username, "root_username"));
+    try expect(std.mem.eql(u8, database_value.password, "root_password"));
+
+    const MissingField = struct {
+        field: u8,
+    };
+    try expectError(ReaderError.MissingField, env_reader.readStruct(MissingField, .{}));
+
+    const NotSupportedType = struct {
+        not_supported_type: bool,
+    };
+    try expectError(ReaderError.NotSupportedType, env_reader.readStruct(NotSupportedType, .{}));
 }

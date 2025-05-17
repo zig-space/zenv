@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const minimum_zig_version = std.SemanticVersion.parse("0.15.0-dev.471+369177f0b") catch unreachable;
+const minimum_zig_version = std.SemanticVersion.parse("0.15.0-dev.471+369177f0b") catch @panic("Error occurs when parse version");
 
 pub fn build(b: *std.Build) void {
     comptime if (builtin.zig_version.order(minimum_zig_version) == .lt) {
@@ -32,14 +32,26 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(lib);
 
+    const zlint_step = b.step("zlint", "Run zlint if exists");
+    if (b.findProgram(&.{"zlint"}, &.{}) catch null) |zlint_path| {
+        const zlint_cmd = b.addSystemCommand(&.{zlint_path});
+        zlint_step.dependOn(&zlint_cmd.step);
+        b.getInstallStep().dependOn(zlint_step);
+    }
+
     // Display output when run by cmd
     const main_tests_cmd = b.addSystemCommand(&.{ "sh", "-c", "zig test src/lib.zig 2>&1 | cat" });
     // SET ENV FOR TEST IT WILL BE REMOVED AFTER TESTS
     main_tests_cmd.setEnvironmentVariable("TEST_SLICE", "test");
     main_tests_cmd.setEnvironmentVariable("TEST_NUMBER", "0");
+    main_tests_cmd.setEnvironmentVariable("PREFIX_SLICE", "prefix");
     main_tests_cmd.setEnvironmentVariable("VALUE1", "value1");
     main_tests_cmd.setEnvironmentVariable("VALUE2", "2");
     main_tests_cmd.setEnvironmentVariable("VALUE3", "3");
+    main_tests_cmd.setEnvironmentVariable("DB_PORT", "5432");
+    main_tests_cmd.setEnvironmentVariable("DB_USERNAME", "root_username");
+    main_tests_cmd.setEnvironmentVariable("DB_PASSWORD", "root_password");
+    main_tests_cmd.setEnvironmentVariable("NOT_SUPPORTED_TYPE", "false");
     const run_test_step = b.step("test", "Run the test and display output in console");
     run_test_step.dependOn(&main_tests_cmd.step);
 }
