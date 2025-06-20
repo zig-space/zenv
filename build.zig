@@ -74,4 +74,24 @@ pub fn build(b: *std.Build) void {
         term_exe.root_module.addImport("zenv", zenv);
         run_term_step.dependOn(&run_term.step);
     }
+    // File example
+    {
+        const file_exe = b.addExecutable(.{
+            .name = "file_example",
+            .root_source_file = b.path("examples/file.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        b.installArtifact(file_exe);
+        const run_file = b.addRunArtifact(file_exe);
+        const run_file_step = b.step("run-file", "Run the terminal example");
+
+        run_file.setEnvironmentVariable("TEST_SLICE", "test");
+        run_file.setEnvironmentVariable("VALUE1", "value1");
+        run_file.setEnvironmentVariable("VALUE2", "2");
+        run_file.setEnvironmentVariable("VALUE3", "3");
+
+        file_exe.root_module.addImport("zenv", zenv);
+        run_file_step.dependOn(&run_file.step);
+    }
 }
