@@ -5,7 +5,7 @@ A simple package for getting env from terminal or dotenv file (.env).
 - [x] Read a key with parsed value. (int, a slice character)
 - [x] Read a key with prefix. (.e.g "DB_", "APP_")
 - [x] Serialize env to safety struct.
-- [x] Read env from a specififed file. (.e.g .env)          (In progress)
+- [x] Read env from a specififed file. (.e.g .env)          
 - [x] Custom reader (Create your own env reader from xml, json, ...)
 
 ## Quick Usage

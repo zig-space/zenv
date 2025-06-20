@@ -12,10 +12,10 @@ pub fn main() !void {
 
     const alloc = da.allocator();
     // NOTE: Using file path in the current working directory
-    var file = try zenv.File.init(alloc, "examples/.env", 1024);
-    defer file.deinit();
+    var dotenv = try zenv.Dotenv.init(alloc, "examples/.env", 1024);
+    defer dotenv.deinit();
 
-    const reader = file.reader();
+    const reader = dotenv.reader();
     // NOTE: Read a key with prefix
     const slice = (try reader.readKey([]const u8, "SLICE", .{ .prefix = "PREFIX_" })) orelse "null";
     std.log.debug("Slice: {s}", .{slice});
