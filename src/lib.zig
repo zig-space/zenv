@@ -1,5 +1,5 @@
 const std = @import("std");
-pub const File = @import("File.zig");
+pub const Dotenv = @import("Dotenv.zig");
 pub const Reader = @import("Reader.zig");
 pub const Term = @import("Term.zig");
 

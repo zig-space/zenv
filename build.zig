@@ -74,17 +74,17 @@ pub fn build(b: *std.Build) void {
         term_exe.root_module.addImport("zenv", zenv);
         run_term_step.dependOn(&run_term.step);
     }
-    // File example
+    // Dotenv example
     {
         const file_exe = b.addExecutable(.{
             .name = "file_example",
-            .root_source_file = b.path("examples/file.zig"),
+            .root_source_file = b.path("examples/dotenv.zig"),
             .target = target,
             .optimize = optimize,
         });
         b.installArtifact(file_exe);
         const run_file = b.addRunArtifact(file_exe);
-        const run_file_step = b.step("run-file", "Run the terminal example");
+        const run_file_step = b.step("run-dotenv", "Run the terminal example");
 
         run_file.setEnvironmentVariable("TEST_SLICE", "test");
         run_file.setEnvironmentVariable("VALUE1", "value1");
