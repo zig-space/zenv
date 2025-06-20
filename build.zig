@@ -14,23 +14,13 @@ pub fn build(b: *std.Build) void {
             .current_version = builtin.zig_version,
         }));
     };
-    comptime if (builtin.os.tag != .linux) {
-        @compileError(@tagName(builtin.os.tag) ++ "is not supported!");
-    };
+
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     _ = b.addModule("zenv", .{
         .root_source_file = b.path("src/lib.zig"),
     });
-
-    const lib = b.addStaticLibrary(.{
-        .name = "zenv",
-        .root_source_file = b.path("src/lib.zig"),
-        .optimize = optimize,
-        .target = target,
-    });
-    b.installArtifact(lib);
 
     const zlint_step = b.step("zlint", "Run zlint if exists");
     if (b.findProgram(&.{"zlint"}, &.{}) catch null) |zlint_path| {
@@ -39,19 +29,28 @@ pub fn build(b: *std.Build) void {
         b.getInstallStep().dependOn(zlint_step);
     }
 
-    // Display output when run by cmd
-    const main_tests_cmd = b.addSystemCommand(&.{ "sh", "-c", "zig test src/lib.zig 2>&1 | cat" });
-    // SET ENV FOR TEST IT WILL BE REMOVED AFTER TESTS
-    main_tests_cmd.setEnvironmentVariable("TEST_SLICE", "test");
-    main_tests_cmd.setEnvironmentVariable("TEST_NUMBER", "0");
-    main_tests_cmd.setEnvironmentVariable("PREFIX_SLICE", "prefix");
-    main_tests_cmd.setEnvironmentVariable("VALUE1", "value1");
-    main_tests_cmd.setEnvironmentVariable("VALUE2", "2");
-    main_tests_cmd.setEnvironmentVariable("VALUE3", "3");
-    main_tests_cmd.setEnvironmentVariable("DB_PORT", "5432");
-    main_tests_cmd.setEnvironmentVariable("DB_USERNAME", "root_username");
-    main_tests_cmd.setEnvironmentVariable("DB_PASSWORD", "root_password");
-    main_tests_cmd.setEnvironmentVariable("NOT_SUPPORTED_TYPE", "false");
-    const run_test_step = b.step("test", "Run the test and display output in console");
-    run_test_step.dependOn(&main_tests_cmd.step);
+    {
+        const lib = b.addStaticLibrary(.{
+            .name = "zenv",
+            .root_source_file = b.path("src/lib.zig"),
+            .optimize = optimize,
+            .target = target,
+        });
+        b.installArtifact(lib);
+        // Display output when run by cmd
+        const main_tests_cmd = b.addSystemCommand(&.{ "sh", "-c", "zig test src/lib.zig 2>&1 | cat" });
+        // SET ENV FOR TEST IT WILL BE REMOVED AFTER TESTS
+        main_tests_cmd.setEnvironmentVariable("TEST_SLICE", "test");
+        main_tests_cmd.setEnvironmentVariable("TEST_NUMBER", "0");
+        main_tests_cmd.setEnvironmentVariable("PREFIX_SLICE", "prefix");
+        main_tests_cmd.setEnvironmentVariable("VALUE1", "value1");
+        main_tests_cmd.setEnvironmentVariable("VALUE2", "2");
+        main_tests_cmd.setEnvironmentVariable("VALUE3", "3");
+        main_tests_cmd.setEnvironmentVariable("DB_PORT", "5432");
+        main_tests_cmd.setEnvironmentVariable("DB_USERNAME", "root_username");
+        main_tests_cmd.setEnvironmentVariable("DB_PASSWORD", "root_password");
+        main_tests_cmd.setEnvironmentVariable("NOT_SUPPORTED_TYPE", "false");
+        const run_test_step = b.step("test", "Run the test and display output in console");
+        run_test_step.dependOn(&main_tests_cmd.step);
+    }
 }
