@@ -22,13 +22,14 @@ pub const Options = struct {
     trim: bool = true,
 };
 
-const VTable = struct {
+pub const VTable = struct {
     /// An `abstract function` with return raw value (`[]const u8`) when reading.
     readFn: *const fn (*const anyopaque, key: []const u8) anyerror!?[]const u8,
 };
 
 /// - Read a `key` and return value with `T` type.
 /// - opts.prefix will be used if not null.
+/// - Letters is uppercase. (key -> KEY)
 ///
 /// Currently, this function only support these types:
 /// * *builtin.Int* (i8, u8, i16, i16, ...)
@@ -36,7 +37,8 @@ const VTable = struct {
 pub fn readKey(self: Self, comptime T: type, key: []const u8, opts: Options) !?T {
     const prefix_key = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{ opts.prefix orelse "", key });
     defer self.allocator.free(prefix_key);
-    const raw_value = try self.vtable.readFn(self.ptr, prefix_key) orelse return null;
+    const upper = try std.ascii.allocUpperString(self.allocator, prefix_key);
+    const raw_value = try self.vtable.readFn(self.ptr, upper) orelse return null;
     defer self.allocator.free(raw_value);
 
     return try self.parseLeaky(T, raw_value, opts);

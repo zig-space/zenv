@@ -18,7 +18,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    _ = b.addModule("zenv", .{
+    const zenv = b.addModule("zenv", .{
         .root_source_file = b.path("src/lib.zig"),
     });
 
@@ -52,5 +52,46 @@ pub fn build(b: *std.Build) void {
         main_tests_cmd.setEnvironmentVariable("NOT_SUPPORTED_TYPE", "false");
         const run_test_step = b.step("test", "Run the test and display output in console");
         run_test_step.dependOn(&main_tests_cmd.step);
+    }
+
+    // Terminal example
+    {
+        const term_exe = b.addExecutable(.{
+            .name = "term_example",
+            .root_source_file = b.path("examples/term.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        b.installArtifact(term_exe);
+        const run_term = b.addRunArtifact(term_exe);
+        const run_term_step = b.step("run-term", "Run the terminal example");
+
+        run_term.setEnvironmentVariable("TEST_SLICE", "test");
+        run_term.setEnvironmentVariable("VALUE1", "value1");
+        run_term.setEnvironmentVariable("VALUE2", "2");
+        run_term.setEnvironmentVariable("VALUE3", "3");
+
+        term_exe.root_module.addImport("zenv", zenv);
+        run_term_step.dependOn(&run_term.step);
+    }
+    // File example
+    {
+        const file_exe = b.addExecutable(.{
+            .name = "file_example",
+            .root_source_file = b.path("examples/file.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        b.installArtifact(file_exe);
+        const run_file = b.addRunArtifact(file_exe);
+        const run_file_step = b.step("run-file", "Run the terminal example");
+
+        run_file.setEnvironmentVariable("TEST_SLICE", "test");
+        run_file.setEnvironmentVariable("VALUE1", "value1");
+        run_file.setEnvironmentVariable("VALUE2", "2");
+        run_file.setEnvironmentVariable("VALUE3", "3");
+
+        file_exe.root_module.addImport("zenv", zenv);
+        run_file_step.dependOn(&run_file.step);
     }
 }
