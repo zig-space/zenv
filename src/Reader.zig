@@ -22,7 +22,7 @@ pub const Options = struct {
 };
 
 pub const VTable = struct {
-    /// An `abstract function` with return raw value (`[]const u8`) when reading.
+    /// An `abstract function` which return raw value (`[]const u8`) when reading.
     readFn: *const fn (*const anyopaque, key: []const u8) anyerror!?[]const u8,
 };
 
@@ -43,7 +43,7 @@ pub fn readKey(self: Self, comptime T: type, key: []const u8, opts: Options) !?T
     return try self.parseLeaky(T, raw_value, opts);
 }
 
-/// See document from `Reader.read()` for supported types in a struct fields
+/// See document from `Reader.readKey()` for supported types in a struct fields
 pub fn readStruct(self: Self, comptime T: type, comptime opts: Options) !T {
     if (@typeInfo(T) != .@"struct") {
         @compileError(std.fmt.comptimePrint("Expected a `struct` found {s}\n", @typeName(@typeInfo(T))));
@@ -67,7 +67,7 @@ pub fn readStruct(self: Self, comptime T: type, comptime opts: Options) !T {
     return @"struct".*;
 }
 
-/// - Parse a raw value ([]const u8) when reading env by `Reader.read()`.
+/// - Parse a raw value ([]const u8) when reading env by `read()` implementation.
 /// # Supported types:
 /// * builtin.Int
 /// * []const u8 or []u8

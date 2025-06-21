@@ -35,7 +35,9 @@ pub const CustomReader = struct {
         return .{
             .allocator = self.allocator,
             .ptr = @constCast(self),
-            .vtable = .{ .readFn = read },
+            .vtable = .{
+                .readFn = read, // Put your rules when reading a key here
+            },
         };
     }
 
@@ -44,6 +46,9 @@ pub const CustomReader = struct {
         const self: *const CustomReader = @ptrCast(@alignCast(ctx));
         _ = self;
         // handle the rest of your function to read env here
+        // NOTE: In this example, this handler
+        //       always return a raw value same
+        //       with the input key.
         return key;
     }
 };
