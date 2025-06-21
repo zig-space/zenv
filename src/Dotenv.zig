@@ -54,6 +54,7 @@ fn readAllToMap(
     errdefer map.deinit();
     const content: []u8 = try file.reader().readAllAlloc(alloc, max_size);
     defer alloc.free(content);
+    // SAFETY: undefined until os is detected to choose delimiter
     var splits: std.mem.TokenIterator(u8, .any) = undefined;
     if (@import("builtin").os.tag == .windows) {
         splits = std.mem.tokenizeAny(u8, content, "\r\n");
