@@ -73,16 +73,16 @@ pub fn readStruct(self: Self, comptime T: type, comptime opts: Options) !T {
 /// * builtin.Int
 /// * []const u8 or []u8
 pub fn parseLeaky(self: Self, comptime T: type, value: []const u8, opts: Options) !T {
+    var trimmed = value[0..];
+    if (opts.trim) {
+        trimmed = std.mem.trim(u8, value[0..], " ");
+    }
     return switch (@typeInfo(T)) {
         .int, .comptime_int => {
-            return try std.fmt.parseInt(T, value, 10);
+            return try std.fmt.parseInt(T, trimmed, 10);
         },
         .pointer => |pointerInfo| {
             if (pointerInfo.child == u8) {
-                var trimmed = value[0..];
-                if (opts.trim) {
-                    trimmed = std.mem.trim(u8, value[0..], " ");
-                }
                 const new_buffer = try self.allocator.alloc(u8, trimmed.len);
                 @memcpy(new_buffer[0..], trimmed[0..]);
                 return new_buffer[0..];
