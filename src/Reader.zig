@@ -75,7 +75,11 @@ pub fn readStruct(self: Self, comptime T: type, comptime opts: Options) !T {
 pub fn parseLeaky(self: Self, comptime T: type, value: []const u8, opts: Options) !T {
     return switch (@typeInfo(T)) {
         .int, .comptime_int => {
-            return try std.fmt.parseInt(T, value, 10);
+            var trimmed = value[0..];
+            if (opts.trim) {
+                trimmed = std.mem.trim(u8, value[0..], " ");
+            }
+            return try std.fmt.parseInt(T, trimmed, 10);
         },
         .pointer => |pointerInfo| {
             if (pointerInfo.child == u8) {
