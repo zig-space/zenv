@@ -69,10 +69,10 @@ fn readAllToMap(
             return error.InvalidLine;
         };
         const trimmed_name = std.mem.trim(u8, line[0..eql_seperator], " ");
-        const trimmed_value = std.mem.trim(u8, line[eql_seperator + 1 ..], " ");
+        const raw_value = line[eql_seperator + 1 ..];
         try map.put(
             try alloc.dupe(u8, trimmed_name),
-            try alloc.dupe(u8, trimmed_value),
+            try alloc.dupe(u8, raw_value),
         );
     }
     return map;

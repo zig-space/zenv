@@ -19,6 +19,8 @@ pub fn main() !void {
     // NOTE: Read a key with prefix
     const slice = (try reader.readKey([]const u8, "SLICE", .{ .prefix = "PREFIX_" })) orelse "null";
     std.log.debug("Slice: {s}", .{slice});
+    const whitespace = (try reader.readKey([]const u8, "WHITESPACE", .{ .prefix = "TEST_", .trim = false })) orelse "null";
+    std.log.debug("WHITESPACE: {s} - len: {d}", .{ whitespace, whitespace.len });
 
     // NOTE: Read a struct
     const Test = struct {
