@@ -3,7 +3,6 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
 const Reader = @import("Reader.zig");
-const Opts = Reader.Options;
 const Self = @This();
 
 allocator: std.mem.Allocator,
