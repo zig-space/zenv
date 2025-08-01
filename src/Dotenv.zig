@@ -7,7 +7,7 @@ allocator: std.mem.Allocator,
 env_map: std.StringHashMap([]const u8),
 _arena: *std.heap.ArenaAllocator,
 
-pub fn init(alloc: std.mem.Allocator, file_path: []const u8, file_max_size: usize) !Self {
+pub fn init(alloc: std.mem.Allocator, file_path: []const u8, comptime file_max_size: usize) !Self {
     const arena = try alloc.create(std.heap.ArenaAllocator);
     arena.* = std.heap.ArenaAllocator.init(alloc);
 
@@ -48,12 +48,17 @@ pub fn read(ctx: *const anyopaque, key: []const u8) !?[]const u8 {
 fn readAllToMap(
     alloc: std.mem.Allocator,
     file: std.fs.File,
-    max_size: usize,
+    comptime max_size: usize,
 ) !std.StringHashMap([]const u8) {
     var map = std.StringHashMap([]const u8).init(alloc);
     errdefer map.deinit();
-    const content: []u8 = try file.reader().readAllAlloc(alloc, max_size);
-    defer alloc.free(content);
+
+    var buf: [max_size]u8 = undefined;
+    const content: []u8 = undefined;
+    var fs_reader = file.reader(&buf);
+    const read_bytes = try fs_reader.read(content);
+    if (read_bytes == 0) return map;
+
     var splits = std.mem.tokenizeAny(
         u8,
         content,
