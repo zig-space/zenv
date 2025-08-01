@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const minimum_zig_version = std.SemanticVersion.parse("0.15.0-dev.471+369177f0b") catch @panic("Error occurs when parse version");
+const minimum_zig_version = std.SemanticVersion.parse("0.15.0-dev.1274+147a85280") catch @panic("Error occurs when parse version");
 
 pub fn build(b: *std.Build) void {
     comptime if (builtin.zig_version.order(minimum_zig_version) == .lt) {
@@ -30,13 +30,6 @@ pub fn build(b: *std.Build) void {
     }
 
     {
-        const lib = b.addStaticLibrary(.{
-            .name = "zenv",
-            .root_source_file = b.path("src/lib.zig"),
-            .optimize = optimize,
-            .target = target,
-        });
-        b.installArtifact(lib);
         // Display output when run by cmd
         const main_tests_cmd = b.addSystemCommand(&.{ "sh", "-c", "zig test src/lib.zig 2>&1 | cat" });
         // SET ENV FOR TEST IT WILL BE REMOVED AFTER TESTS
@@ -58,9 +51,11 @@ pub fn build(b: *std.Build) void {
     {
         const term_exe = b.addExecutable(.{
             .name = "term_example",
-            .root_source_file = b.path("examples/term.zig"),
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/term.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
         });
         b.installArtifact(term_exe);
         const run_term = b.addRunArtifact(term_exe);
@@ -78,9 +73,11 @@ pub fn build(b: *std.Build) void {
     {
         const file_exe = b.addExecutable(.{
             .name = "file_example",
-            .root_source_file = b.path("examples/dotenv.zig"),
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("examples/dotenv.zig"),
+                .target = target,
+                .optimize = optimize,
+            }),
         });
         b.installArtifact(file_exe);
         const run_file = b.addRunArtifact(file_exe);
