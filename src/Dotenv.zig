@@ -48,17 +48,12 @@ pub fn read(ctx: *const anyopaque, key: []const u8) !?[]const u8 {
 fn readAllToMap(
     alloc: std.mem.Allocator,
     file: std.fs.File,
-    comptime max_size: usize,
+    max_size: usize,
 ) !std.StringHashMap([]const u8) {
     var map = std.StringHashMap([]const u8).init(alloc);
     errdefer map.deinit();
-
-    var buf: [max_size]u8 = undefined;
-    const content: []u8 = undefined;
-    var fs_reader = file.reader(&buf);
-    const read_bytes = try fs_reader.read(content);
-    if (read_bytes == 0) return map;
-
+    const content = try file.readToEndAlloc(alloc, max_size);
+    defer alloc.free(content);
     var splits = std.mem.tokenizeAny(
         u8,
         content,

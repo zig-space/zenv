@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-const minimum_zig_version = std.SemanticVersion.parse("0.15.0-dev.1274+147a85280") catch @panic("Error occurs when parse version");
+const minimum_zig_version = std.SemanticVersion.parse("0.14.1") catch @panic("Error occurs when parse version");
 
 pub fn build(b: *std.Build) void {
     comptime if (builtin.zig_version.order(minimum_zig_version) == .lt) {
